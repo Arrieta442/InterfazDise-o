@@ -27,6 +27,49 @@
 .App-link {
   color: #61dafb;
 }
+.container {
+  padding: 20px;
+  background-color: #ffffff;
+}
+
+/* Wrapper que organiza los Cards a lo horizontal */
+.box-wrapper {
+  display: flex;
+  flex-direction: row;  /* organiza los elementos horizontalmente */
+  align-items: center;
+  justify-content: flex-start; /* pegado a la izquierda */
+  gap: 24px; /* separación entre Cards */
+  flex-wrap: wrap; /* si no caben en una fila, pasan a la siguiente */
+  margin-top: 20px;
+}
+
+
+
+/* Caja emergente: título dentro de un cuadrado con una parte sobresaliendo */
+.emergent-box {
+  /* Caja compacta que encierra el título */
+  /* Usamos flex para centrar verticalmente y alinear a la izquierda */
+  display: flex;
+  align-items: center;    /* centra verticalmente */
+  justify-content: flex-start; /* alinea a la izquierda */
+  background: #ffffff;
+  padding: 28px 200px;
+  border-radius: 12px;
+  border: 3px solid #000000;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+  margin: 20px auto;
+  position: relative;
+}
+
+.emergent-title {
+  margin: 0;
+  font-size: 42px;
+  color: #0e0e0e;
+  line-height: 1.05;
+  font-weight: 800;
+  text-align: left; /* alineado a la izquierda dentro de la caja */
+  padding: 6px 0;
+}
 
 @keyframes App-logo-spin {
   from {
@@ -36,3 +79,230 @@
     transform: rotate(360deg);
   }
 }
+
+/* Estilos para la sección de Almacenamiento (almacenamiento.js) */
+.alm-columns {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.alm-card-category {
+  background: #ffffff;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.04);
+  flex: 1 1 300px;
+}
+
+.alm-product-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.alm-item {
+  display: flex;
+  align-items: center; /* centra verticalmente el contenido */
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 6px;
+  border-radius: 6px;
+}
+
+.alm-item > div {
+  flex: 1;
+}
+
+.alm-status {
+  display: inline-flex; /* centra el texto dentro del badge */
+  align-items: center;
+  justify-content: center;
+  min-width: 110px; /* garantiza ancho y centramiento */
+  padding: 6px 10px;
+  border-radius: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.alm-status.green {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #c8e6c9;
+}
+
+.alm-status.orange {
+  background: #fff7e6;
+  color: #ff9800;
+  border: 1px solid #ffe0b2;
+}
+
+.alm-status.red {
+  background: #fff0f0;
+  color: #cc0000;
+  border: 1px solid #ffd6d6;
+}
+
+.alm-total {
+  margin-top: 12px;
+  color: #333;
+  font-weight: 600;
+}
+
+/* Ensure totals align at the same vertical position regardless of list length */
+.alm-card-category {
+  display: flex;
+  flex-direction: column;
+}
+
+.alm-product-list {
+  flex: 1 1 auto; /* allow product list to grow and push total to bottom */
+}
+
+.alm-total {
+  margin-top: auto; /* push to bottom of the card */
+}
+
+
+
+/* ===== GENERAL ===== */
+.almacenamiento-container {
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  color: #333;
+}
+
+/* ===== HEADER ===== */
+.alm-header {
+  background: #fff;
+  padding: 20px;
+  border-radius: 14px;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.1);
+  margin-bottom: 20px;
+}
+
+.alm-subtitle {
+  margin-top: -10px;
+  color: #777;
+}
+
+.alm-info-bar {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  color: #555;
+}
+
+/* ===== PORCENTAJE ===== */
+.alm-section {
+  background: #fff;
+  padding: 20px;
+  border-radius: 14px;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.1);
+  margin-bottom: 25px;
+}
+
+.alm-number {
+  font-size: 35px;
+  font-weight: bold;
+}
+
+.alm-bar-background {
+  width: 100%;
+  height: 10px;
+  background: #cfcfcf;
+  border-radius: 5px;
+  margin-top: 10px;
+}
+
+.alm-bar-fill {
+  height: 10px;
+  background: #4caf50;
+  border-radius: 5px;
+}
+
+.alm-categories-summary {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+/* Colores */
+.cat-a { color: #009688; }
+.cat-b { color: #2962ff; }
+.cat-c { color: #ef6c00; }
+
+/* ===== COLUMNAS ===== */
+.alm-columns {
+  display: flex;
+  gap: 20px;
+}
+
+.alm-card-category {
+  background: white;
+  flex: 1;
+  padding: 20px;
+  border-radius: 14px;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.1);
+}
+
+/* HEADER DE CATEGORÍA */
+.alm-cat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.alm-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  color: white;
+  font-size: 12px;
+}
+.green { background: #43a047; }
+.blue { background: #1976d2; }
+.orange { background: #ef6c00; }
+
+/* ALERTAS */
+.alm-alert {
+  margin-top: 15px;
+  padding: 8px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #b00020;
+  background: #ffebee;
+}
+
+/* ITEMS */
+.alm-product-list {
+  margin-top: 10px;
+}
+
+.alm-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  background: #fafafa;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+.alm-status {
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  color: white;
+}
+.alm-status.green { background: #43a047; }
+.alm-status.red { background: #d32f2f; }
+.alm-status.orange { background: #fb8c00; }
+
+.alm-total {
+  text-align: right;
+  margin-top: 10px;
+  font-weight: bold;
+}
+
