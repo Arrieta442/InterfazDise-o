@@ -5,7 +5,6 @@ import CardElements from "../components/common/CardElements";
 import BackButton from "../components/common/BackButton";
 
 export default function Almacenamiento() {
-  
   return (
     <div className="almacenamiento-container">
 

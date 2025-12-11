@@ -1,6 +1,38 @@
+import { useEffect, useState } from 'react';
 import Boton from '../components/common/boton';
 import Card from "../components/common/Card";
-export default function Dashboard() {
+
+export default function Dashboard({
+  ocupacion = { value: "77%", progress: 77, footer: "Alta ocupación" },
+  robotsActivos = { value: "2 / 5", progress: 77, footer: "En espera" },
+  dispensa = { value: "1 / 3 activos", progress: 0, footer: "Sin" },
+  recepcion = { value: "1 / 2 activos", progress: 0, footer: "En cola" },
+  alarmas = { value: "2 activas", progress: 20, footer: "Requiere atención" },
+  estadoSistema = { estado: "advertencia", alarmasActivas: 2 },
+  ultimaActualizacion: ultimaActualizacionProp,
+  conexion = "estable"
+}) {
+  const [horaActual, setHoraActual] = useState(
+    ultimaActualizacionProp || new Date().toLocaleTimeString('es-ES', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    })
+  );
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const hora = new Date().toLocaleTimeString('es-ES', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+      setHoraActual(hora);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
  
     <div style={{
@@ -18,9 +50,9 @@ export default function Dashboard() {
       <Card
         icon="📦"
         title="Nivel de Ocupación"
-        value="77%"
-        progress={90}
-        footer="Alta ocupación"
+        value={ocupacion.value}
+        progress={ocupacion.progress}
+        footer={ocupacion.footer}
         iconColor="#0066ff"
         barColor="#ff9900"
       />
@@ -28,45 +60,42 @@ export default function Dashboard() {
       <Card
         icon="🤖"
         title="Robots Activos"
-        value={"1 / 5"}
-        progress={77}
-        footer="En espera"
+        value={robotsActivos.value}
+        progress={robotsActivos.progress}
+        footer={robotsActivos.footer}
         iconColor="#0066ff"
         barColor="#ff9900"
       />
-
 
       <Card
         icon="📦"
         title="Productos en zona de Dispensa"
-        value={"1 / 3 activos"}
-        progress={0}
-        footer="Sin" //o En proceso
+        value={dispensa.value}
+        progress={dispensa.progress}
+        footer={dispensa.footer}
         iconColor="#0066ff"
         barColor="#ff9900"
       />
 
-    <Card
+      <Card
         icon="🏪"
         title="Productos Zona de recepción"
-        value={"1 / 2 activos"}
-        progress={0}
-        footer="En cola" //o En proceso
+        value={recepcion.value}
+        progress={recepcion.progress}
+        footer={recepcion.footer}
         iconColor="#0066ff"
         barColor="#ff9900"
       />
 
-
-
-    <Card
-    icon="🚨"
-    title="Alarmas del Sistema"
-    value="2 activas"
-    progress={20}
-    footer="Requiere atención"
-    iconColor="#ff3333"
-    barColor="#ff0000"
-    />
+      <Card
+        icon="🚨"
+        title="Alarmas del Sistema"
+        value={alarmas.value}
+        progress={alarmas.progress}
+        footer={alarmas.footer}
+        iconColor="#ff3333"
+        barColor="#ff0000"
+      />
 
     </div>
 
@@ -142,25 +171,27 @@ export default function Dashboard() {
             alignItems: "center",
             gap: "15px",
             padding: "15px",
-            backgroundColor: "#fffaed",
+            backgroundColor: estadoSistema.estado === "normal" ? "#e8f5e9" : "#fffaed",
             borderRadius: "8px",
-            border: "1px solid #ffd700"
+            border: estadoSistema.estado === "normal" ? "1px solid #4caf50" : "1px solid #ffd700"
           }}>
             <div style={{
               width: "50px",
               height: "50px",
               borderRadius: "50%",
-              backgroundColor: "#ffa500",
+              backgroundColor: estadoSistema.estado === "normal" ? "#4caf50" : "#ffa500",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               fontSize: "24px"
             }}>
-              ⚠️
+              {estadoSistema.estado === "normal" ? "✅" : "⚠️"}
             </div>
             <div>
               <p style={{ margin: "0", color: "#333", fontWeight: "600" }}>Indicador de estado</p>
-              <p style={{ margin: "5px 0 0 0", color: "#ff9900", fontSize: "14px", fontWeight: "500" }}>Sistema advertencia</p>
+              <p style={{ margin: "5px 0 0 0", color: estadoSistema.estado === "normal" ? "#4caf50" : "#ff9900", fontSize: "14px", fontWeight: "500" }}>
+                Sistema {estadoSistema.estado === "normal" ? "operativo" : "advertencia"}
+              </p>
             </div>
           </div>
         </div>
@@ -175,16 +206,18 @@ export default function Dashboard() {
             alignItems: "center",
             justifyContent: "space-between",
             padding: "15px",
-            backgroundColor: "#fff5f5",
+            backgroundColor: estadoSistema.alarmasActivas > 0 ? "#fff5f5" : "#e8f5e9",
             borderRadius: "8px",
-            border: "1px solid #ffcccc"
+            border: estadoSistema.alarmasActivas > 0 ? "1px solid #ffcccc" : "1px solid #4caf50"
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <span style={{ fontSize: "20px" }}>🔴</span>
-              <p style={{ margin: "0", color: "#cc0000", fontWeight: "600", fontSize: "14px" }}>Requiere atención</p>
+              <span style={{ fontSize: "20px" }}>{estadoSistema.alarmasActivas > 0 ? "🔴" : "🟢"}</span>
+              <p style={{ margin: "0", color: estadoSistema.alarmasActivas > 0 ? "#cc0000" : "#4caf50", fontWeight: "600", fontSize: "14px" }}>
+                {estadoSistema.alarmasActivas > 0 ? "Requiere atención" : "Sin alarmas"}
+              </p>
             </div>
             <div style={{
-              backgroundColor: "#cc0000",
+              backgroundColor: estadoSistema.alarmasActivas > 0 ? "#cc0000" : "#4caf50",
               color: "white",
               borderRadius: "50%",
               width: "40px",
@@ -195,7 +228,7 @@ export default function Dashboard() {
               fontWeight: "700",
               fontSize: "18px"
             }}>
-              2
+              {estadoSistema.alarmasActivas}
             </div>
           </div>
         </div>
@@ -209,24 +242,24 @@ export default function Dashboard() {
         color: "#666",
         fontSize: "14px"
       }}>
-        <strong>Última actualización:</strong> 8:42:37
+        <strong>Última actualización:</strong> {horaActual}
       </div>
 
       {/* Conexión */}
       <div style={{
         marginTop: "15px",
         padding: "12px 16px",
-        backgroundColor: "#e8f5e9",
+        backgroundColor: conexion === "estable" ? "#e8f5e9" : "#fff5f5",
         borderRadius: "8px",
-        border: "1px solid #4caf50",
+        border: conexion === "estable" ? "1px solid #4caf50" : "1px solid #ff0000",
         display: "flex",
         alignItems: "center",
         gap: "10px",
-        color: "#2e7d32",
+        color: conexion === "estable" ? "#2e7d32" : "#cc0000",
         fontWeight: "500"
       }}>
-        <span style={{ fontSize: "16px" }}>🟢</span>
-        Conexión estable
+        <span style={{ fontSize: "16px" }}>{conexion === "estable" ? "🟢" : "🔴"}</span>
+        Conexión {conexion}
       </div>
     </div>
 

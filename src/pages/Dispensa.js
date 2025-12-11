@@ -1,10 +1,31 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import PageHeader from '../components/common/PageHeader';
 
 export default function Dispensa() {
   // Estado dinámico
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('Todas');
+  const [currentTime, setCurrentTime] = useState(
+    new Date().toLocaleTimeString('es-ES', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    })
+  );
+
+  // Actualizar hora cada segundo
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const hora = new Date().toLocaleTimeString('es-ES', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+      setCurrentTime(hora);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
   
   const [products] = useState([
     {
@@ -69,7 +90,7 @@ export default function Dispensa() {
         subtitle="Solicitar productos y gestionar salidas del almacén"
         userLevel="OPERADOR"
         userLevelNumber="1"
-        time="22:40:33"
+        time={currentTime}
       />
 
       {/* CONTENT */}
