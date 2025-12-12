@@ -1,10 +1,53 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Card from "../components/common/boton";
 import CardElements from "../components/common/CardElements";
 import BackButton from "../components/common/BackButton";
+import useAlmacen from "../hooks/useAlmacen";
 
 export default function Almacenamiento() {
+  const { items, cargando, error } = useAlmacen();
+  
+  const [currentTime, setCurrentTime] = useState(
+    new Date().toLocaleTimeString('es-ES', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    })
+  );
+
+  // Actualizar hora cada segundo
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const hora = new Date().toLocaleTimeString('es-ES', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+      setCurrentTime(hora);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Filtrar productos por categoría (basado en la primera letra del producto_id)
+  const productosA = items.filter(item => item.producto_id?.startsWith('A'));
+  const productosB = items.filter(item => item.producto_id?.startsWith('B'));
+  const productosC = items.filter(item => item.producto_id?.startsWith('C'));
+
+  // Calcular totales (conteo de productos)
+  const totalA = productosA.length;
+  const totalB = productosB.length;
+  const totalC = productosC.length;
+  const totalUnidades = totalA + totalB + totalC;
+  const maxUnidades = 50; // Máximo de productos
+  const porcentajeOcupacion = Math.round((totalUnidades / maxUnidades) * 100);
+
+  // Contar productos con stock bajo
+  const stockBajoA = productosA.filter(item => item.estado === 'Stock Bajo').length;
+  const stockBajoB = productosB.filter(item => item.estado === 'Stock Bajo').length;
+  const stockBajoC = productosC.filter(item => item.estado === 'Stock Bajo').length;
+
   return (
     <div className="almacenamiento-container">
 
@@ -53,7 +96,7 @@ export default function Almacenamiento() {
 
           <div style={{textAlign: 'right'}}>
             <div style={{fontSize: '12px', color: '#666', marginBottom: '4px'}}>Última actualización</div>
-            <strong style={{fontSize: '16px'}}>7:40:14</strong>
+            <strong style={{fontSize: '16px'}}>{currentTime}</strong>
           </div>
         </div>
       </div>
@@ -63,47 +106,55 @@ export default function Almacenamiento() {
         <h3>Porcentaje de Ocupación</h3>
 
         <div className="alm-percentage" style={{display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: '12px'}}>
-          {/* Top: percentage + categories */}
-          <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
-            <div style={{fontSize: '48px', fontWeight: 700, color: '#0e0e0e'}}>73%</div>
+          {cargando ? (
+            <div style={{textAlign: 'center', padding: '20px', color: '#666'}}>Cargando datos...</div>
+          ) : error ? (
+            <div style={{textAlign: 'center', padding: '20px', color: '#f44336'}}>Error: {error}</div>
+          ) : (
+            <>
+              {/* Top: percentage + categories */}
+              <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+                <div style={{fontSize: '48px', fontWeight: 700, color: '#0e0e0e'}}>{porcentajeOcupacion}%</div>
 
-            <div style={{display: 'flex', flexDirection: 'row', gap: '40px', alignItems: 'center'}}>
-              <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px'}}>
-                <div style={{fontSize: '32px', fontWeight: 700, color: '#4caf50'}}>803</div>
-                <div style={{fontSize: '13px', color: '#666'}}>Categoría A</div>
+                <div style={{display: 'flex', flexDirection: 'row', gap: '40px', alignItems: 'center'}}>
+                  <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px'}}>
+                    <div style={{fontSize: '32px', fontWeight: 700, color: '#4caf50'}}>{totalA.toLocaleString()}</div>
+                    <div style={{fontSize: '13px', color: '#666'}}>Categoría A</div>
+                  </div>
+
+                  <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px'}}>
+                    <div style={{fontSize: '32px', fontWeight: 700, color: '#2196f3'}}>{totalB.toLocaleString()}</div>
+                    <div style={{fontSize: '13px', color: '#666'}}>Categoría B</div>
+                  </div>
+
+                  <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px'}}>
+                    <div style={{fontSize: '32px', fontWeight: 700, color: '#ff5722'}}>{totalC.toLocaleString()}</div>
+                    <div style={{fontSize: '13px', color: '#666'}}>Categoría C</div>
+                  </div>
+                </div>
               </div>
 
-              <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px'}}>
-                <div style={{fontSize: '32px', fontWeight: 700, color: '#2196f3'}}>1.924</div>
-                <div style={{fontSize: '13px', color: '#666'}}>Categoría B</div>
+              {/* Middle: units text */}
+              <div style={{color: '#666', fontSize: '14px'}}>
+                {totalUnidades} productos de {maxUnidades} máximo
               </div>
 
-              <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px'}}>
-                <div style={{fontSize: '32px', fontWeight: 700, color: '#ff5722'}}>930</div>
-                <div style={{fontSize: '13px', color: '#666'}}>Categoría C</div>
+              {/* Bottom: progress bar + percentage marks */}
+              <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
+                <div className="alm-bar-background" style={{width: '100%', height: '12px', borderRadius: '6px', background: '#e0e0e0', overflow: 'hidden'}}>
+                  <div className="alm-bar-fill" style={{ width: `${porcentajeOcupacion}%`, height: '100%', background: '#1a1a1a' }}></div>
+                </div>
+                
+                <div style={{display: 'flex', justifyContent: 'space-between', color: '#999', fontSize: '12px'}}>
+                  <span>0%</span>
+                  <span>25%</span>
+                  <span>50%</span>
+                  <span>75%</span>
+                  <span>100%</span>
+                </div>
               </div>
-            </div>
-          </div>
-
-          {/* Middle: units text */}
-          <div style={{color: '#666', fontSize: '14px'}}>
-            3.657 unidades de 5.000 máximo
-          </div>
-
-          {/* Bottom: progress bar + percentage marks */}
-          <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
-            <div className="alm-bar-background" style={{width: '100%', height: '12px', borderRadius: '6px', background: '#e0e0e0', overflow: 'hidden'}}>
-              <div className="alm-bar-fill" style={{ width: "73%", height: '100%', background: '#1a1a1a' }}></div>
-            </div>
-            
-            <div style={{display: 'flex', justifyContent: 'space-between', color: '#999', fontSize: '12px'}}>
-              <span>0%</span>
-              <span>25%</span>
-              <span>50%</span>
-              <span>75%</span>
-              <span>100%</span>
-            </div>
-          </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -114,138 +165,96 @@ export default function Almacenamiento() {
         <div className="alm-card-category">
           <div className="alm-cat-header">
             <h4>Productos en Categoría A</h4>
-            <span className="alm-badge green">8 productos</span>
+            <span className="alm-badge green">{productosA.length} productos</span>
           </div>
 
-          <div className="alm-alert red">2 productos con stock bajo</div>
+          {stockBajoA > 0 && (
+            <div className="alm-alert red">{stockBajoA} producto{stockBajoA > 1 ? 's' : ''} con stock bajo</div>
+          )}
 
           <div className="alm-product-list">
-
-            <CardElements
-              nombre="Procesador ARM-64"
-              codigo="A-005"
-              cantidad="234"
-              ubicacion="Estante 1-A"
-              estado="Disponible"
-              categoria="A"
-            />
-
-            <CardElements
-              nombre='Display OLED 7"'
-              codigo="A-014"
-              cantidad="67"
-              ubicacion="Estante 1-B"
-              estado="Disponible"
-              categoria="A"
-            />
-
-            <CardElements
-              nombre="Batería Li-Po 5000mAh"
-              codigo="A-007"
-              cantidad="198"
-              ubicacion="Estante 1-C"
-              estado="Disponible"
-              categoria="A"
-            />
-
-            <CardElements
-              nombre="Motor Servo MG996R"
-              codigo="A-008"
-              cantidad="8"
-              ubicacion="Estante 1-D"
-              estado="Stock Bajo"
-              categoria="A"
-            />
-
+            {productosA.length > 0 ? (
+              productosA.map((item) => (
+                <CardElements
+                  key={item.id}
+                  nombre={`Producto ${item.producto_id}`}
+                  codigo={item.producto_id}
+                  cantidad={item.trayectoria}
+                  ubicacion={item.ubicacion}
+                  estado={item.estado}
+                  categoria="A"
+                />
+              ))
+            ) : (
+              <div style={{textAlign: 'center', padding: '20px', color: '#666'}}>No hay productos en esta categoría</div>
+            )}
           </div>
 
-          <div className="alm-total">Total unidades: <strong>803</strong></div>
+          <div className="alm-total">Total productos: <strong>{totalA}</strong></div>
         </div>
 
         {/* CATEGORÍA B */}
         <div className="alm-card-category">
           <div className="alm-cat-header">
             <h4>Productos en Categoría B</h4>
-            <span className="alm-badge blue">9 productos</span>
+            <span className="alm-badge blue">{productosB.length} productos</span>
           </div>
 
-          <div className="alm-alert red">1 producto con stock bajo</div>
+          {stockBajoB > 0 && (
+            <div className="alm-alert red">{stockBajoB} producto{stockBajoB > 1 ? 's' : ''} con stock bajo</div>
+          )}
 
           <div className="alm-product-list">
-
-            <CardElements
-              nombre="Etiquetas Identificación"
-              codigo="B-106"
-              cantidad="9"
-              ubicacion="Estante 2-A"
-              estado="Stock Bajo"
-              categoria="B"
-            />
-
-            <CardElements
-              nombre="Plástico Protector"
-              codigo="B-015"
-              cantidad="423"
-              ubicacion="Estante 2-B"
-              estado="Disponible"
-              categoria="B"
-            />
-
-            <CardElements
-              nombre="Cinta Adhesiva Industrial"
-              codigo="B-108"
-              cantidad="167"
-              ubicacion="Estante 2-C"
-              estado="Disponible"
-              categoria="B"
-            />
-
+            {productosB.length > 0 ? (
+              productosB.map((item) => (
+                <CardElements
+                  key={item.id}
+                  nombre={`Producto ${item.producto_id}`}
+                  codigo={item.producto_id}
+                  cantidad={item.trayectoria}
+                  ubicacion={item.ubicacion}
+                  estado={item.estado}
+                  categoria="B"
+                />
+              ))
+            ) : (
+              <div style={{textAlign: 'center', padding: '20px', color: '#666'}}>No hay productos en esta categoría</div>
+            )}
           </div>
 
-          <div className="alm-total">Total unidades: <strong>1.924</strong></div>
+          <div className="alm-total">Total productos: <strong>{totalB}</strong></div>
         </div>
 
         {/* CATEGORÍA C */}
         <div className="alm-card-category">
           <div className="alm-cat-header">
             <h4>Productos en Categoría C</h4>
-            <span className="alm-badge orange">8 productos</span>
+            <span className="alm-badge orange">{productosC.length} productos</span>
           </div>
 
-          <div className="alm-alert red">2 productos con stock bajo</div>
+          {stockBajoC > 0 && (
+            <div className="alm-alert red">{stockBajoC} producto{stockBajoC > 1 ? 's' : ''} con stock bajo</div>
+          )}
 
           <div className="alm-product-list">
-
-            <CardElements
-              nombre="Calibrador Digital"
-              codigo="C-204"
-              cantidad="203"
-              ubicacion="Estante 3-A"
-              estado="Disponible"
-              categoria="C"
-            />
-
-            <CardElements
-              nombre="Carro Transporte Industrial"
-              codigo="C-207"
-              cantidad="15"
-              ubicacion="Estante 3-B"
-              estado="Disponible"
-              categoria="C"
-            />
-
-            <CardElements
-              nombre="Marcador Permanente (Pack 12)"
-              codigo="C-206"
-              cantidad="389"
-              ubicacion="Estante 3-C"
-              estado="Disponible"
-              categoria="C"
-            />
-
+            {productosC.length > 0 ? (
+              productosC.map((item) => (
+                <CardElements
+                  key={item.id}
+                  nombre={`Producto ${item.producto_id}`}
+                  codigo={item.producto_id}
+                  cantidad={item.trayectoria}
+                  ubicacion={item.ubicacion}
+                  estado={item.estado}
+                  categoria="C"
+                />
+              ))
+            ) : (
+              <div style={{textAlign: 'center', padding: '20px', color: '#666'}}>No hay productos en esta categoría</div>
+            )}
           </div>
 
-          <div className="alm-total">Total unidades: <strong>930</strong></div>
+          <div className="alm-total">Total productos: <strong>{totalC}</strong></div>
         </div>
 
       </div>

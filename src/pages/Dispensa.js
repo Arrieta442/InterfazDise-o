@@ -51,7 +51,7 @@ export default function Dispensa() {
     }
   ]);
 
-  const [orderQueue] = useState([]);
+  const [orderQueue, setOrderQueue] = useState([]);
 
   const [notifications] = useState([
     {
@@ -73,6 +73,38 @@ export default function Dispensa() {
   const handleCallRobot = () => console.log('Llamar a Robot');
   const handlePause = () => console.log('Pausar operación');
   const handleAbort = () => console.log('Abortar operación');
+
+  // Agregar producto a la cola
+  const handleAddToQueue = (product) => {
+    if (orderQueue.length < 3) {
+      setOrderQueue([...orderQueue, product]);
+    } else {
+      alert('La cola está llena (máximo 3 órdenes)');
+    }
+  };
+
+  // Eliminar producto de la cola
+  const handleRemoveFromQueue = (index) => {
+    setOrderQueue(orderQueue.filter((_, i) => i !== index));
+  };
+
+  // Mover producto hacia arriba en la cola
+  const handleMoveUp = (index) => {
+    if (index > 0) {
+      const newQueue = [...orderQueue];
+      [newQueue[index], newQueue[index - 1]] = [newQueue[index - 1], newQueue[index]];
+      setOrderQueue(newQueue);
+    }
+  };
+
+  // Mover producto hacia abajo en la cola
+  const handleMoveDown = (index) => {
+    if (index < orderQueue.length - 1) {
+      const newQueue = [...orderQueue];
+      [newQueue[index], newQueue[index + 1]] = [newQueue[index + 1], newQueue[index]];
+      setOrderQueue(newQueue);
+    }
+  };
 
   // Filtrar productos
   const filteredProducts = products.filter(product => {
@@ -151,13 +183,19 @@ export default function Dispensa() {
                   background: '#f8f9fa',
                   borderRadius: '8px',
                   marginBottom: '8px',
-                  border: '1px solid #e0e0e0'
-                }}>
+                  border: '1px solid #e0e0e0',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = '#e8f5e9'}
+                onMouseLeave={(e) => e.currentTarget.style.background = '#f8f9fa'}
+                onClick={() => handleAddToQueue(product)}
+                >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                     <span style={{
                       padding: '2px 8px',
                       borderRadius: '4px',
-                      background: '#4caf50',
+                      background: product.category === 'A' ? '#4caf50' : product.category === 'B' ? '#2196f3' : '#ff9800',
                       color: 'white',
                       fontSize: '11px',
                       fontWeight: 'bold'
@@ -200,19 +238,110 @@ export default function Dispensa() {
               }}>
                 <div style={{ fontSize: '48px', marginBottom: '16px' }}>🛒</div>
                 <div style={{ fontSize: '14px', textAlign: 'center' }}>No hay órdenes en cola</div>
-                <div style={{ fontSize: '12px', color: '#bbb', marginTop: '8px' }}>Cree un pedido para comenzar</div>
+                <div style={{ fontSize: '12px', color: '#bbb', marginTop: '8px' }}>Haz clic en un producto para agregarlo</div>
               </div>
             ) : (
               <div>
                 {orderQueue.map((order, index) => (
                   <div key={index} style={{
-                    padding: '16px',
-                    background: '#f8f9fa',
+                    padding: '12px',
+                    background: '#fff',
                     borderRadius: '8px',
                     border: '2px solid #2196f3',
-                    marginBottom: '12px'
+                    marginBottom: '12px',
+                    position: 'relative'
                   }}>
-                    {/* Order content */}
+                    {/* Número de orden */}
+                    <div style={{
+                      position: 'absolute',
+                      top: '8px',
+                      left: '8px',
+                      width: '24px',
+                      height: '24px',
+                      borderRadius: '50%',
+                      background: '#2196f3',
+                      color: 'white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '12px',
+                      fontWeight: 'bold'
+                    }}>
+                      {index + 1}
+                    </div>
+
+                    {/* Controles de movimiento */}
+                    <div style={{
+                      position: 'absolute',
+                      top: '8px',
+                      right: '8px',
+                      display: 'flex',
+                      gap: '4px'
+                    }}>
+                      <button
+                        onClick={() => handleMoveUp(index)}
+                        disabled={index === 0}
+                        style={{
+                          padding: '4px 8px',
+                          background: index === 0 ? '#ccc' : '#2196f3',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: index === 0 ? 'not-allowed' : 'pointer',
+                          fontSize: '12px'
+                        }}
+                      >
+                        ▲
+                      </button>
+                      <button
+                        onClick={() => handleMoveDown(index)}
+                        disabled={index === orderQueue.length - 1}
+                        style={{
+                          padding: '4px 8px',
+                          background: index === orderQueue.length - 1 ? '#ccc' : '#2196f3',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: index === orderQueue.length - 1 ? 'not-allowed' : 'pointer',
+                          fontSize: '12px'
+                        }}
+                      >
+                        ▼
+                      </button>
+                      <button
+                        onClick={() => handleRemoveFromQueue(index)}
+                        style={{
+                          padding: '4px 8px',
+                          background: '#f44336',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '12px'
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    {/* Contenido del producto */}
+                    <div style={{ marginTop: '32px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                        <span style={{
+                          padding: '2px 8px',
+                          borderRadius: '4px',
+                          background: order.category === 'A' ? '#4caf50' : order.category === 'B' ? '#2196f3' : '#ff9800',
+                          color: 'white',
+                          fontSize: '11px',
+                          fontWeight: 'bold'
+                        }}>
+                          {order.category}
+                        </span>
+                        <span style={{ fontSize: '12px', color: '#666', fontWeight: 600 }}>{order.id}</span>
+                      </div>
+                      <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '4px' }}>{order.name}</div>
+                      <div style={{ fontSize: '12px', color: '#666' }}>📍 {order.location}</div>
+                    </div>
                   </div>
                 ))}
               </div>
