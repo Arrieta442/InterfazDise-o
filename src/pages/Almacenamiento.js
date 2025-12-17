@@ -6,6 +6,7 @@ import BackButton from "../components/common/BackButton";
 import useAlmacen from "../hooks/useAlmacen";
 
 export default function Almacenamiento() {
+  // Obtener datos del hook
   const { items, cargando, error } = useAlmacen();
   
   const [currentTime, setCurrentTime] = useState(
@@ -30,23 +31,36 @@ export default function Almacenamiento() {
     return () => clearInterval(interval);
   }, []);
 
-  // Filtrar productos por categoría (basado en la primera letra del producto_id)
-  const productosA = items.filter(item => item.producto_id?.startsWith('A'));
-  const productosB = items.filter(item => item.producto_id?.startsWith('B'));
-  const productosC = items.filter(item => item.producto_id?.startsWith('C'));
+  // Función para determinar categoría basada únicamente en la ubicación
+  const obtenerCategoria = (item) => {
+    // La ubicación dicta la clasificación: A1 -> Categoría A, B2 -> Categoría B, etc.
+    const ubicacionLetra = item.ubicacion?.charAt(0).toUpperCase();
+    if (ubicacionLetra && /^[A-C]$/.test(ubicacionLetra)) {
+      return ubicacionLetra;
+    }
+    
+    // Por defecto categoría C si no tiene ubicación válida
+    return 'C';
+  };
 
-  // Calcular totales (conteo de productos)
-  const totalA = productosA.length;
-  const totalB = productosB.length;
-  const totalC = productosC.length;
-  const totalUnidades = totalA + totalB + totalC;
+  // Filtrar productos por categoría con iteración
+  const productosA = items.filter(item => obtenerCategoria(item) === 'A');
+  const productosB = items.filter(item => obtenerCategoria(item) === 'B');
+  const productosC = items.filter(item => obtenerCategoria(item) === 'C');
+
+  // Calcular totales (conteo de productos almacenados)
+  const productosAlmacenados = items.filter(item => item.estado === 'almacenado');
+  const totalA = productosA.filter(item => item.estado === 'almacenado').length;
+  const totalB = productosB.filter(item => item.estado === 'almacenado').length;
+  const totalC = productosC.filter(item => item.estado === 'almacenado').length;
+  const totalUnidades = productosAlmacenados.length;
   const maxUnidades = 50; // Máximo de productos
   const porcentajeOcupacion = Math.round((totalUnidades / maxUnidades) * 100);
 
-  // Contar productos con stock bajo
-  const stockBajoA = productosA.filter(item => item.estado === 'Stock Bajo').length;
-  const stockBajoB = productosB.filter(item => item.estado === 'Stock Bajo').length;
-  const stockBajoC = productosC.filter(item => item.estado === 'Stock Bajo').length;
+  // Contar productos con estados especiales
+  const stockBajoA = productosA.filter(item => item.estado === 'Stock Bajo' || item.estado === 'bajo').length;
+  const stockBajoB = productosB.filter(item => item.estado === 'Stock Bajo' || item.estado === 'bajo').length;
+  const stockBajoC = productosC.filter(item => item.estado === 'Stock Bajo' || item.estado === 'bajo').length;
 
   return (
     <div className="almacenamiento-container">
@@ -174,15 +188,16 @@ export default function Almacenamiento() {
 
           <div className="alm-product-list">
             {productosA.length > 0 ? (
-              productosA.map((item) => (
+              productosA.map((item, index) => (
                 <CardElements
-                  key={item.id}
+                  key={item.id || index}
                   nombre={`Producto ${item.producto_id}`}
                   codigo={item.producto_id}
                   cantidad={item.trayectoria}
                   ubicacion={item.ubicacion}
                   estado={item.estado}
                   categoria="A"
+                  timestamp={item.timestamp}
                 />
               ))
             ) : (
@@ -206,15 +221,16 @@ export default function Almacenamiento() {
 
           <div className="alm-product-list">
             {productosB.length > 0 ? (
-              productosB.map((item) => (
+              productosB.map((item, index) => (
                 <CardElements
-                  key={item.id}
+                  key={item.id || index}
                   nombre={`Producto ${item.producto_id}`}
                   codigo={item.producto_id}
                   cantidad={item.trayectoria}
                   ubicacion={item.ubicacion}
                   estado={item.estado}
                   categoria="B"
+                  timestamp={item.timestamp}
                 />
               ))
             ) : (
@@ -238,15 +254,16 @@ export default function Almacenamiento() {
 
           <div className="alm-product-list">
             {productosC.length > 0 ? (
-              productosC.map((item) => (
+              productosC.map((item, index) => (
                 <CardElements
-                  key={item.id}
+                  key={item.id || index}
                   nombre={`Producto ${item.producto_id}`}
                   codigo={item.producto_id}
                   cantidad={item.trayectoria}
                   ubicacion={item.ubicacion}
                   estado={item.estado}
                   categoria="C"
+                  timestamp={item.timestamp}
                 />
               ))
             ) : (
