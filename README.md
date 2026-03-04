@@ -291,10 +291,3 @@ base de datos
 - crear protocolos POST  en el front
 - Implementar lista de Notificaciones establecidas en las diapositivaas
 
-
-
-## MI RECOMENDACION
-    -- Crear otra Hooks para el robots
-    -- crear protocolos POST  en el front
-    -- Implementar lista de Notificaciones establecidas en las diapositivaas
-
