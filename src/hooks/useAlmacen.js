@@ -9,7 +9,7 @@ export default function useAlmacen() {
     async function obtenerDatos() {
       try {
         console.log('Intentando conectar con la API...');
-        const resp = await fetch("https://8eb65a3d9259.ngrok-free.app/inventario/listar", {
+        const resp = await fetch("https://8648035cba35.ngrok-free.app/inventario/listar", {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

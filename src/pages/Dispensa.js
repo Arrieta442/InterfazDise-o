@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from "react";
 import PageHeader from '../components/common/PageHeader';
+import useAlmacen from "../hooks/useAlmacen";
+import useFifo from "../hooks/useFifo";
 
 export default function Dispensa() {
+
+    const { items, cargando, error } = useAlmacen();
+    const { fifoQueue, cargando: cargandoFifo, error: errorFifo } = useFifo();
+  
   // Estado dinámico
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('Todas');
+  const [productosDespachados, setProductosDespachados] = useState([]);
   const [currentTime, setCurrentTime] = useState(
     new Date().toLocaleTimeString('es-ES', {
       hour: '2-digit',
@@ -27,31 +34,7 @@ export default function Dispensa() {
     return () => clearInterval(interval);
   }, []);
   
-  const [products] = useState([
-    {
-      id: 'A-001',
-      name: 'Motor Eléctrico 220V',
-      category: 'A',
-      stock: 45,
-      location: 'A-01-05'
-    },
-    {
-      id: 'A-002',
-      name: 'Controlador PLC S7-1200',
-      category: 'B',
-      stock: 23,
-      location: 'A-05-03'
-    },
-    {
-      id: 'A-003',
-      name: 'Sensor Ultrasónico HC-SR04',
-      category: 'A',
-      stock: 67,
-      location: 'A-03-12'
-    }
-  ]);
 
-  const [orderQueue, setOrderQueue] = useState([]);
 
   const [notifications] = useState([
     {
@@ -69,49 +52,44 @@ export default function Dispensa() {
   // Handlers
   const handleSearch = (e) => setSearchTerm(e.target.value);
   const handleFilterChange = (e) => setFilterCategory(e.target.value);
-  const handleStart = () => console.log('Iniciar operación');
-  const handleCallRobot = () => console.log('Llamar a Robot');
-  const handlePause = () => console.log('Pausar operación');
-  const handleAbort = () => console.log('Abortar operación');
 
-  // Agregar producto a la cola
-  const handleAddToQueue = (product) => {
-    if (orderQueue.length < 3) {
-      setOrderQueue([...orderQueue, product]);
-    } else {
-      alert('La cola está llena (máximo 3 órdenes)');
+  // Despachar producto
+  const handleDespachar = async (product) => {
+    try {
+      console.log(`Despachando producto ${product.producto_id}...`);
+      const resp = await fetch(`https://8648035cba35.ngrok-free.app/inventario/despachar/${product.id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
+        }
+      });
+      
+      if (!resp.ok) throw new Error('Error al despachar producto');
+      
+      const data = await resp.json();
+      
+      // Agregar producto a despachados con timestamp
+      const productoDespachado = {
+        ...product,
+        fechaDespacho: new Date().toISOString()
+      };
+      setProductosDespachados([productoDespachado, ...productosDespachados]);
+      
+      alert(`Producto ${product.producto_id} despachado exitosamente`);
+    } catch (err) {
+      console.error('Error al despachar:', err);
+      alert('Error al despachar el producto');
     }
   };
 
-  // Eliminar producto de la cola
-  const handleRemoveFromQueue = (index) => {
-    setOrderQueue(orderQueue.filter((_, i) => i !== index));
-  };
-
-  // Mover producto hacia arriba en la cola
-  const handleMoveUp = (index) => {
-    if (index > 0) {
-      const newQueue = [...orderQueue];
-      [newQueue[index], newQueue[index - 1]] = [newQueue[index - 1], newQueue[index]];
-      setOrderQueue(newQueue);
-    }
-  };
-
-  // Mover producto hacia abajo en la cola
-  const handleMoveDown = (index) => {
-    if (index < orderQueue.length - 1) {
-      const newQueue = [...orderQueue];
-      [newQueue[index], newQueue[index + 1]] = [newQueue[index + 1], newQueue[index]];
-      setOrderQueue(newQueue);
-    }
-  };
-
-  // Filtrar productos
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         product.id.toLowerCase().includes(searchTerm.toLowerCase());
+  // Filtrar productos (excluyendo los despachados)
+  const filteredProducts = items?.filter(product => {
+    const matchesSearch = product.producto_id?.toLowerCase().includes(searchTerm?.toLowerCase()) || 
+                         product.id?.toLowerCase().includes(searchTerm?.toLowerCase());
     const matchesFilter = filterCategory === 'Todas' || product.category === filterCategory;
-    return matchesSearch && matchesFilter;
+    const noEstaDespacho = !productosDespachados.some(p => p.id === product.id);
+    return matchesSearch && matchesFilter && noEstaDespacho;
   });
 
   return (
@@ -129,7 +107,7 @@ export default function Dispensa() {
       <div style={{ padding: "30px" }}>
         
         {/* MAIN GRID */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '20px', marginBottom: '20px' }}>
           
           {/* LEFT - Solicitar Producto */}
           <div style={{ background: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
@@ -184,50 +162,74 @@ export default function Dispensa() {
                   borderRadius: '8px',
                   marginBottom: '8px',
                   border: '1px solid #e0e0e0',
-                  cursor: 'pointer',
                   transition: 'all 0.2s'
                 }}
                 onMouseEnter={(e) => e.currentTarget.style.background = '#e8f5e9'}
                 onMouseLeave={(e) => e.currentTarget.style.background = '#f8f9fa'}
-                onClick={() => handleAddToQueue(product)}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                     <span style={{
                       padding: '2px 8px',
                       borderRadius: '4px',
-                      background: product.category === 'A' ? '#4caf50' : product.category === 'B' ? '#2196f3' : '#ff9800',
+                      background: product.estado === 'almacenado' ? '#4caf50' : product?.estado === '' ? '#2196f3' : '#ff9800',
                       color: 'white',
                       fontSize: '11px',
                       fontWeight: 'bold'
                     }}>
-                      {product.category}
+                      {product.estado}
                     </span>
                     <span style={{ fontSize: '12px', color: '#666' }}>{product.id}</span>
                   </div>
-                  <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '4px' }}>{product.name}</div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#666' }}>
-                    <span>📦 Stock: {product.stock}</span>
-                    <span>📍 {product.location}</span>
+                  <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>{product?.producto_id}</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: '#666' }}>
+                    <span>📍 {product.ubicacion}</span>
+                    <button
+                      onClick={() => handleDespachar(product)}
+                      disabled={product.estado !== 'almacenado'}
+                      style={{
+                        padding: '6px 12px',
+                        background: product.estado === 'almacenado' ? '#2196f3' : '#ccc',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        fontSize: '11px',
+                        fontWeight: 'bold',
+                        cursor: product.estado === 'almacenado' ? 'pointer' : 'not-allowed',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (product.estado === 'almacenado') {
+                          e.target.style.background = '#1976d2';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (product.estado === 'almacenado') {
+                          e.target.style.background = '#2196f3';
+                        }
+                      }}
+                    >
+                      📦 Despachar
+                    </button>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* MIDDLE - Cola de Órdenes */}
+          {/* MIDDLE - Lógica FIFO */}
           <div style={{ background: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
             <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
-              🛒 Cola de Órdenes <span style={{
+              🔄 Lógica FIFO <span style={{
                 background: '#e3f2fd',
                 color: '#1976d2',
                 padding: '2px 8px',
                 borderRadius: '4px',
                 fontSize: '12px',
                 fontWeight: 'bold'
-              }}>{orderQueue.length}/3</span>
+              }}>{fifoQueue?.length || 0}</span>
             </h3>
 
-            {orderQueue.length === 0 ? (
+            {cargandoFifo ? (
               <div style={{ 
                 display: 'flex', 
                 flexDirection: 'column', 
@@ -236,13 +238,32 @@ export default function Dispensa() {
                 padding: '60px 20px',
                 color: '#999'
               }}>
-                <div style={{ fontSize: '48px', marginBottom: '16px' }}>🛒</div>
-                <div style={{ fontSize: '14px', textAlign: 'center' }}>No hay órdenes en cola</div>
-                <div style={{ fontSize: '12px', color: '#bbb', marginTop: '8px' }}>Haz clic en un producto para agregarlo</div>
+                <div style={{ fontSize: '14px' }}>Cargando cola FIFO...</div>
+              </div>
+            ) : errorFifo ? (
+              <div style={{ 
+                padding: '20px',
+                textAlign: 'center',
+                color: '#f44336'
+              }}>
+                Error: {errorFifo}
+              </div>
+            ) : !fifoQueue || fifoQueue.length === 0 ? (
+              <div style={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                padding: '60px 20px',
+                color: '#999'
+              }}>
+                <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔄</div>
+                <div style={{ fontSize: '14px', textAlign: 'center' }}>No hay productos en cola FIFO</div>
+                <div style={{ fontSize: '12px', color: '#bbb', marginTop: '8px' }}>Los productos despachados aparecerán aquí</div>
               </div>
             ) : (
               <div>
-                {orderQueue.map((order, index) => (
+                {fifoQueue.map((item, index) => (
                   <div key={index} style={{
                     padding: '12px',
                     background: '#fff',
@@ -251,7 +272,7 @@ export default function Dispensa() {
                     marginBottom: '12px',
                     position: 'relative'
                   }}>
-                    {/* Número de orden */}
+                    {/* Número de posición en FIFO */}
                     <div style={{
                       position: 'absolute',
                       top: '8px',
@@ -259,7 +280,7 @@ export default function Dispensa() {
                       width: '24px',
                       height: '24px',
                       borderRadius: '50%',
-                      background: '#2196f3',
+                      background: index === 0 ? '#4caf50' : '#2196f3',
                       color: 'white',
                       display: 'flex',
                       alignItems: 'center',
@@ -270,59 +291,22 @@ export default function Dispensa() {
                       {index + 1}
                     </div>
 
-                    {/* Controles de movimiento */}
-                    <div style={{
-                      position: 'absolute',
-                      top: '8px',
-                      right: '8px',
-                      display: 'flex',
-                      gap: '4px'
-                    }}>
-                      <button
-                        onClick={() => handleMoveUp(index)}
-                        disabled={index === 0}
-                        style={{
-                          padding: '4px 8px',
-                          background: index === 0 ? '#ccc' : '#2196f3',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: index === 0 ? 'not-allowed' : 'pointer',
-                          fontSize: '12px'
-                        }}
-                      >
-                        ▲
-                      </button>
-                      <button
-                        onClick={() => handleMoveDown(index)}
-                        disabled={index === orderQueue.length - 1}
-                        style={{
-                          padding: '4px 8px',
-                          background: index === orderQueue.length - 1 ? '#ccc' : '#2196f3',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: index === orderQueue.length - 1 ? 'not-allowed' : 'pointer',
-                          fontSize: '12px'
-                        }}
-                      >
-                        ▼
-                      </button>
-                      <button
-                        onClick={() => handleRemoveFromQueue(index)}
-                        style={{
-                          padding: '4px 8px',
-                          background: '#f44336',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          fontSize: '12px'
-                        }}
-                      >
-                        ✕
-                      </button>
-                    </div>
+                    {/* Badge de siguiente */}
+                    {index === 0 && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '8px',
+                        right: '8px',
+                        padding: '4px 8px',
+                        background: '#4caf50',
+                        color: 'white',
+                        borderRadius: '4px',
+                        fontSize: '10px',
+                        fontWeight: 'bold'
+                      }}>
+                        SIGUIENTE
+                      </div>
+                    )}
 
                     {/* Contenido del producto */}
                     <div style={{ marginTop: '32px' }}>
@@ -330,17 +314,47 @@ export default function Dispensa() {
                         <span style={{
                           padding: '2px 8px',
                           borderRadius: '4px',
-                          background: order.category === 'A' ? '#4caf50' : order.category === 'B' ? '#2196f3' : '#ff9800',
+                          background: item.estado === 'almacenado' ? '#4caf50' : '#ff9800',
                           color: 'white',
                           fontSize: '11px',
                           fontWeight: 'bold'
                         }}>
-                          {order.category}
+                          {item.estado}
                         </span>
-                        <span style={{ fontSize: '12px', color: '#666', fontWeight: 600 }}>{order.id}</span>
+                        <span style={{ fontSize: '12px', color: '#666', fontWeight: 600 }}>ID: {item.id}</span>
                       </div>
-                      <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '4px' }}>{order.name}</div>
-                      <div style={{ fontSize: '12px', color: '#666' }}>📍 {order.location}</div>
+                      <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '4px' }}>{item.producto_id}</div>
+                      <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>📍 {item.ubicacion}</div>
+                      {item.timestamp && (
+                        <div style={{ fontSize: '11px', color: '#999', marginBottom: '8px' }}>
+                          ⏱️ {new Date(item.timestamp).toLocaleString('es-ES')}
+                        </div>
+                      )}
+                      
+                      {/* Botón Despachar */}
+                      <button
+                        onClick={() => handleDespachar(item)}
+                        style={{
+                          width: '100%',
+                          padding: '8px 12px',
+                          background: '#4caf50',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '6px',
+                          fontSize: '12px',
+                          fontWeight: 'bold',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px'
+                        }}
+                        onMouseEnter={(e) => e.target.style.background = '#45a049'}
+                        onMouseLeave={(e) => e.target.style.background = '#4caf50'}
+                      >
+                        📦 Despachar Producto
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -389,112 +403,65 @@ export default function Dispensa() {
             ))}
           </div>
 
-        </div>
+          {/* Productos Despachados */}
+          <div style={{ background: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+            <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              ✅ Productos Despachados <span style={{
+                background: '#e8f5e9',
+                color: '#4caf50',
+                padding: '2px 8px',
+                borderRadius: '4px',
+                fontSize: '12px',
+                fontWeight: 'bold'
+              }}>{productosDespachados.length}</span>
+            </h3>
 
-        {/* Control de Operaciones - Full Width */}
-        <div style={{ background: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-          <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: 600, color: '#666' }}>
-            Control de Operaciones de Dispensa
-          </h3>
-          <p style={{ margin: '0 0 20px 0', fontSize: '13px', color: '#999' }}>
-            Se requiere al menos una orden
-          </p>
-
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-            <button
-              onClick={handleStart}
-              style={{
-                padding: '10px 20px',
-                background: '#9e9e9e',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                transition: 'all 0.3s ease'
-              }}
-              onMouseEnter={(e) => e.target.style.background = '#757575'}
-              onMouseLeave={(e) => e.target.style.background = '#9e9e9e'}
-            >
-              ▶️ Iniciar
-            </button>
-
-            <button
-              onClick={handleCallRobot}
-              style={{
-                padding: '10px 20px',
-                background: '#2196f3',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                transition: 'all 0.3s ease'
-              }}
-              onMouseEnter={(e) => e.target.style.background = '#1976d2'}
-              onMouseLeave={(e) => e.target.style.background = '#2196f3'}
-            >
-              🤖 Llamar a Robot
-            </button>
-
-            <button
-              onClick={handlePause}
-              style={{
-                padding: '10px 20px',
-                background: 'white',
-                color: '#333',
-                border: '1px solid #ddd',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                transition: 'all 0.3s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = '#f5f5f5';
-                e.target.style.borderColor = '#999';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = 'white';
-                e.target.style.borderColor = '#ddd';
-              }}
-            >
-              ⏸️ Pausar
-            </button>
-
-            <button
-              onClick={handleAbort}
-              style={{
-                padding: '10px 20px',
-                background: '#f44336',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                transition: 'all 0.3s ease'
-              }}
-              onMouseEnter={(e) => e.target.style.background = '#d32f2f'}
-              onMouseLeave={(e) => e.target.style.background = '#f44336'}
-            >
-              🛑 Abortar
-            </button>
+            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+              {productosDespachados.length === 0 ? (
+                <div style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  padding: '60px 20px',
+                  color: '#999'
+                }}>
+                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>📦</div>
+                  <div style={{ fontSize: '14px', textAlign: 'center' }}>No hay productos despachados</div>
+                </div>
+              ) : (
+                productosDespachados.map((product, index) => (
+                  <div key={index} style={{
+                    padding: '12px',
+                    background: '#e8f5e9',
+                    borderRadius: '8px',
+                    marginBottom: '8px',
+                    border: '1px solid #4caf50'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                      <span style={{
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        background: '#4caf50',
+                        color: 'white',
+                        fontSize: '11px',
+                        fontWeight: 'bold'
+                      }}>
+                        DESPACHADO
+                      </span>
+                      <span style={{ fontSize: '12px', color: '#666' }}>ID: {product.id}</span>
+                    </div>
+                    <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '4px' }}>{product.producto_id}</div>
+                    <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>📍 {product.ubicacion}</div>
+                    <div style={{ fontSize: '11px', color: '#999' }}>
+                      ⏱️ {new Date(product.fechaDespacho).toLocaleString('es-ES')}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
+
         </div>
 
       </div>
