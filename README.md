@@ -1,8 +1,10 @@
-# Estructura del Proyecto - InterfazDiseño
+# Sistema de Almacenamiento y Recuperación Automatizado (AS/RS)
 
 ## 📋 Descripción General
 
-Aplicación React para gestión de almacén con módulos de recepción, almacenamiento, dispensa y control de inventario mediante sistema FIFO.
+
+Este repositorio contiene el desarrollo de la Interfaz Humano-Máquina (HMI) para un sistema automatizado de almacenamiento y recuperación (AS/RS). La interfaz permite visualizar el estado del inventario en tiempo real, mostrando la ubicación de los productos dentro del almacén. También permite simular pedidos de clientes para solicitar productos específicos. El sistema está diseñado para la gestión de almacén con módulos de recepción, almacenamiento, dispensa y control de inventario mediante sistema FIFO.
+
 
 ---
 
